@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    scroll-behavior: smooth;
+    font-family: 'Fira Code', monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-feature-settings: "calt" 1, "zero" 1;
+    font-variant-ligatures: normal;
+    background-color: #05070A;
+    color: #F1F5F9;
+  }
+
+  code, pre, kbd, samp, input, button {
+    font-family: 'Fira Code', monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-feature-settings: "calt" 1, "zero" 1;
+    font-variant-ligatures: normal;
+  }
+}
+
+/* Subtle architectural grid */
+.bg-grid-subtle {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
+/* Minimalist border utilities */
+.border-subtle {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.border-subtle-hover:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #07080B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E222D;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10B981;
+}
