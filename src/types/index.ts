@@ -9,7 +9,7 @@ export interface ServiceItem {
   techStack: string[];
   turnaround: string;
   startingPrice: string;
-  highlightColor: 'emerald' | 'indigo' | 'cyan';
+  highlightColor: 'brand' | 'neutral' | 'muted';
   icon: string;
 }
 

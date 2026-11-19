@@ -1,108 +1,121 @@
-import React from 'react';
-import { servicesData, developerInfo } from '../data/portfolioData';
-import { ArrowUpRight, Check, ArrowRight } from 'lucide-react';
+import { ArrowUpRight, Check, Clock3, Flame, Layers, Zap } from 'lucide-react';
+import { calculatorPackages, servicesData } from '../data/portfolioData';
+import { Reveal } from './ui/Reveal';
+import { SectionHeading } from './ui/SectionHeading';
 
 interface ServicesSectionProps {
   onSelectService: (serviceId: string) => void;
 }
 
-export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectService }) => {
+const iconMap = {
+  Layers,
+  Flame,
+  Zap,
+} as const;
+
+const priceLabels: Record<string, string> = {
+  'laravel-landing-commerce': 'Custom estimate',
+  'wordpress-landing-pages': `From ৳ ${calculatorPackages[0].basePriceBDT.toLocaleString('en-BD')}`,
+  'laravel-web-apps': `From ৳ ${calculatorPackages[2].basePriceBDT.toLocaleString('en-BD')}`,
+  'performance-audit': 'Custom audit',
+};
+
+export function ServicesSection({ onSelectService }: ServicesSectionProps) {
   return (
-    <section id="services" className="py-20 lg:py-24 border-b border-white/[0.06] bg-[#07080B]">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8">
-        
-        {/* Section Header */}
-        <div className="max-w-2xl mb-12">
-          <div className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-2">
-            02 // Core Capabilities & Rates
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            Transparent pricing. Specialized execution.
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Flat fees in BDT (৳) with milestone payments. No surprise bills or hidden hosting markups.
-          </p>
-        </div>
+    <section id="services" className="relative bg-[#090c0e] py-24 lg:py-32">
+      <div className="page-shell">
+        <SectionHeading
+          eyebrow="02 / Capabilities"
+          title={
+            <>
+              Specialist execution, without the <span className="serif-accent">agency overhead.</span>
+            </>
+          }
+          description="Four focused engagements, each built around a clear business outcome and a production-ready technical foundation."
+          action={
+            <a href="#calculator" className="btn-ghost group">
+              Estimate a project
+              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </a>
+          }
+        />
 
-        {/* 3 Services Minimal Columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {servicesData.map((service, idx) => (
-            <div
-              key={service.id}
-              className="p-6 rounded-xl border border-white/[0.08] bg-[#090C12] hover:border-zinc-700 transition-all flex flex-col justify-between"
-            >
-              <div>
-                {/* Index & Turnaround */}
-                <div className="flex items-center justify-between text-xs font-mono text-zinc-500 mb-3">
-                  <span>{String(idx + 1).padStart(2, '0')} //</span>
-                  <span>{service.turnaround}</span>
-                </div>
+        <div className="mt-16 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {servicesData.map((service, index) => {
+            const Icon = iconMap[service.icon as keyof typeof iconMap] ?? Layers;
+            const isFeatured = service.id === 'wordpress-landing-pages';
+            const price = service.startingPrice || priceLabels[service.id] || 'Custom estimate';
 
-                <h3 className="text-lg font-bold text-white leading-snug">
-                  {service.title}
-                </h3>
-
-                <p className="text-xs text-zinc-400 mt-2 font-sans leading-relaxed">
-                  {service.tagline}
-                </p>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-2.5">
-                  <div className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
-                    Included Deliverables:
-                  </div>
-                  {service.features.slice(0, 4).map((feature, fIdx) => (
-                    <div key={fIdx} className="flex items-start gap-2 text-xs text-zinc-300">
-                      <span className="text-emerald-400 font-mono mt-0.5">•</span>
-                      <span className="leading-snug">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price & Action */}
-              <div className="pt-6 mt-6 border-t border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-500 font-mono block">Starting at</span>
-                  <span className="text-base font-bold font-mono text-white">{service.startingPrice}</span>
-                </div>
-
-                <button
-                  onClick={() => onSelectService(service.id)}
-                  className="px-3 py-1.5 rounded text-xs font-mono font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors flex items-center gap-1"
+            return (
+              <Reveal key={service.id} delay={index * 80}>
+                <article
+                  className={`surface-card interactive-card group relative flex h-full flex-col overflow-hidden rounded-[22px] p-7 sm:p-8 ${
+                    isFeatured ? 'border-[#D6F25C]/28' : ''
+                  }`}
                 >
-                  <span>Select</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  {isFeatured && (
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D6F25C] to-transparent" />
+                  )}
 
-        {/* Minimal Contrast Table */}
-        <div className="mt-12 p-6 rounded-xl border border-white/[0.08] bg-[#080B10]">
-          <h4 className="text-sm font-mono font-semibold text-white mb-4">
-            The Professional Standard vs Typical Freelancers in Bangladesh:
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-            <div className="p-3 rounded bg-[#090C12] border border-white/[0.04] space-y-1">
-              <span className="text-zinc-500 block text-[10px]">MOBILE TRAFFIC</span>
-              <span className="text-emerald-400 font-medium block">Sub-1.2s on 4G (95+ score)</span>
-              <span className="text-zinc-500 text-[11px]">vs 6s+ lag with bloated plugins</span>
-            </div>
-            <div className="p-3 rounded bg-[#090C12] border border-white/[0.04] space-y-1">
-              <span className="text-zinc-500 block text-[10px]">COURIER INTEGRATION</span>
-              <span className="text-emerald-400 font-medium block">1-Click Steadfast/Pathao API</span>
-              <span className="text-zinc-500 text-[11px]">vs hours of manual data entry</span>
-            </div>
-            <div className="p-3 rounded bg-[#090C12] border border-white/[0.04] space-y-1">
-              <span className="text-zinc-500 block text-[10px]">COMMUNICATION</span>
-              <span className="text-emerald-400 font-medium block">Daily Loom video screencasts</span>
-              <span className="text-zinc-500 text-[11px]">vs disappearing after advance payment</span>
-            </div>
-          </div>
-        </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-[#D6F25C]/8 text-[#D6F25C]">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.19em] text-zinc-500">
+                        {String(index + 1).padStart(2, '0')} / Service
+                      </span>
+                    </div>
+                    <span className="chip">{service.badge}</span>
+                  </div>
 
+                  <h3 className="mt-8 max-w-md text-xl font-semibold leading-snug tracking-tight text-white">
+                    {service.title}
+                  </h3>
+                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">
+                    {service.tagline}
+                  </p>
+
+                  <div className="mt-7 grid gap-2.5">
+                    {service.features.slice(0, 4).map((feature) => (
+                      <div key={feature} className="flex items-start gap-2.5 text-sm text-zinc-300">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D6F25C]" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-7 flex flex-wrap gap-2">
+                    {service.techStack.slice(0, 4).map((tech) => (
+                      <span key={tech} className="chip">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto flex flex-col gap-4 border-t border-white/[0.08] pt-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+                        <Clock3 className="h-3 w-3" />
+                        {service.turnaround}
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-white">{price}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onSelectService(service.id)}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/12 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:border-[#D6F25C]/50 hover:text-[#D6F25C]"
+                    >
+                      Discuss scope
+                      <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </button>
+                  </div>
+                </article>
+              </Reveal>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
-};
+}

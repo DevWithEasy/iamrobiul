@@ -1,331 +1,302 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Play, 
-  Copy, 
-  Check, 
-  Terminal as TerminalIcon, 
-  FileCode, 
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Check,
   CheckCircle2,
-  Zap,
+  Copy,
+  CreditCard,
   PackageCheck,
-  CreditCard
+  TerminalSquare,
+  Zap,
 } from 'lucide-react';
-import { developerInfo } from '../data/portfolioData';
 
-type ActiveTab = 'profile' | 'laravel' | 'terminal';
+type Tab = 'profile' | 'checkout' | 'terminal';
 
-export const LiveCodeTerminal: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('profile');
+const codeByTab: Record<Tab, string[]> = {
+  profile: [
+    '// Robiul Awal — product engineering profile',
+    'const engineer = {',
+    '  focus: "High-converting commerce systems",',
+    '  location: "Dhaka, Bangladesh",',
+    '  experience: "6+ years",',
+    '  stack: ["React", "Next.js", "Laravel", "WordPress"],',
+    '  integrations: [',
+    '    "bKash & Nagad payments",',
+    '    "Steadfast & Pathao courier",',
+    '    "Server-side Meta CAPI",',
+    '  ],',
+    '  standards: { speed: "<1.2s", warranty: "30 days" },',
+    '  status: "Available for select projects",',
+    '};',
+  ],
+  checkout: [
+    '<?php',
+    '// One-step commerce order pipeline',
+    'class QuickOrderController extends Controller',
+    '{',
+    '  public function store(OrderRequest $request)',
+    '  {',
+    '    $order = Order::create($request->validated());',
+    '    $parcel = Steadfast::dispatch($order->toParcel());',
+    '    Bkash::verify($request->transaction_id);',
+    '    MetaCapi::trackPurchase($order);',
+    '',
+    '    return response()->json([',
+    '      "status" => "confirmed",',
+    '      "latency" => "<180ms",',
+    '    ]);',
+    '  }',
+    '}',
+  ],
+  terminal: [
+    '$ npx audit --commerce --mobile',
+    '',
+    '✓ Core Web Vitals: passing',
+    '✓ Checkout path: 1 step',
+    '✓ Courier webhook: active',
+    '✓ Payment verification: active',
+    '✓ Meta CAPI event match: 9.4',
+    '',
+    'System readiness: 100%',
+    '$ _',
+  ],
+};
+
+const simulationResults: Record<string, string[]> = {
+  speed: [
+    '❯ audit --pagespeed --mobile',
+    '  LCP: 1.10s · TBT: 20ms · CLS: 0.00',
+    '  Performance score: 98 / 100 on BD 4G',
+    '✔ Ready for paid social traffic.',
+  ],
+  bkash: [
+    '❯ test --gateway bkash-tokenized',
+    '  POST /tokenized/checkout/create → 200 OK',
+    '  Signature verified · webhook listener active',
+    '✔ Payment confirmation is automated.',
+  ],
+  courier: [
+    '❯ dispatch --courier steadfast-api',
+    '  Consignment STDF-984218BD generated',
+    '  Order details pushed to merchant dashboard',
+    '✔ Zero manual address entry required.',
+  ],
+};
+
+function highlightLine(line: string) {
+  if (line.startsWith('//')) {
+    return <span className="italic text-zinc-600">{line}</span>;
+  }
+
+  if (line.startsWith('✓') || line.startsWith('✔')) {
+    return <span className="text-[#D6F25C]">{line}</span>;
+  }
+
+  if (line.startsWith('$')) {
+    return (
+      <span>
+        <span className="text-[#D6F25C]">$</span>
+        <span className="text-zinc-300">{line.slice(1)}</span>
+      </span>
+    );
+  }
+
+  const parts = line.split(/("[^"]*")/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('"') && part.endsWith('"')) {
+      return (
+        <span key={index} className="text-[#D6F25C]/90">
+          {part}
+        </span>
+      );
+    }
+
+    const isKeyword = /^(\s*)(const|class|public|return|use|namespace|function|\$|✓)/.test(part);
+    return (
+      <span key={index} className={isKeyword ? 'text-zinc-100' : 'text-zinc-400'}>
+        {part}
+      </span>
+    );
+  });
+}
+
+export function LiveCodeTerminal() {
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [copied, setCopied] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(0);
   const [activeCommand, setActiveCommand] = useState<string | null>(null);
   const [consoleLogs, setConsoleLogs] = useState<string[] | null>(null);
 
-  // Typewriter code lines for profile
-  const profileLines = [
-    '// Robiul Awal — Engineering for Bangladeshi E-Commerce & Retail',
-    'export const engineer = {',
-    '  name: "Robiul Awal",',
-    '  location: "Dhaka, Bangladesh",',
-    '  experience: "6+ Years Specialized",',
-    '  specializations: [',
-    '    "WordPress High-Converting Sales Pages",',
-    '    "Custom Laravel Systems (POS, ERP, Dashboards)",',
-    '    "Sub-1.2s 4G Mobile Performance",',
-    '  ],',
-    '  nativeIntegrations: [',
-    '    "bKash Tokenized & Nagad Checkout",',
-    '    "Steadfast & Pathao Automated Courier API",',
-    '    "Server-Side Meta Conversions API (CAPI)",',
-    '  ],',
-    '  guarantees: {',
-    '    delivery: "48 to 72 Hours for Landing Pages",',
-    '    postLaunchSupport: "30 Days Free Warranty",',
-    '    progressUpdates: "Daily Loom Screencasts",',
-    '  },',
-    '  status: "Available for Q4 Projects",',
-    '};',
-  ];
-
-  const laravelLines = [
-    '<?php',
-    'namespace App\\Http\\Controllers;',
-    '',
-    'use App\\Services\\SteadfastCourierApi;',
-    'use App\\Services\\BkashMerchantService;',
-    '',
-    'class QuickOrderController extends Controller',
-    '{',
-    '    public function store(OrderRequest $request)',
-    '    {',
-    '        // 1-Step high-speed checkout entry',
-    '        $order = Order::create($request->validated());',
-    '        ',
-    '        // Automatic parcel booking to Steadfast Courier',
-    '        $consignment = SteadfastCourierApi::dispatch([',
-    '            "invoice" => $order->invoice_no,',
-    '            "customer" => $order->customer_name,',
-    '            "phone" => $order->phone,',
-    '            "cod" => $order->total_bdt,',
-    '        ]);',
-    '        ',
-    '        // Server-Side Meta CAPI Event (Bypasses iOS 14+ ad block)',
-    '        MetaCapi::trackPurchase($order);',
-    '        ',
-    '        return response()->json(["status" => 200, "speed" => "sub-second"]);',
-    '    }',
-    '}',
-  ];
-
-  const [visibleCount, setVisibleCount] = useState(0);
+  const lines = useMemo(() => codeByTab[activeTab], [activeTab]);
 
   useEffect(() => {
     setVisibleCount(0);
-    const timer = setInterval(() => {
-      setVisibleCount((prev) => {
-        if (prev < profileLines.length) return prev + 1;
-        clearInterval(timer);
-        return prev;
+    const timer = window.setInterval(() => {
+      setVisibleCount((count) => {
+        if (count >= lines.length) {
+          window.clearInterval(timer);
+          return count;
+        }
+        return count + 1;
       });
-    }, 65);
-    return () => clearInterval(timer);
-  }, [activeTab]);
+    }, 52);
+    return () => window.clearInterval(timer);
+  }, [lines]);
 
-  const handleCopy = () => {
-    const text = activeTab === 'profile' ? profileLines.join('\n') : laravelLines.join('\n');
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
   };
 
-  const runSimulation = (cmdType: 'speed' | 'bkash' | 'courier') => {
-    setActiveCommand(cmdType);
+  const runSimulation = (command: 'speed' | 'bkash' | 'courier') => {
+    setActiveCommand(command);
     setConsoleLogs(null);
-
-    setTimeout(() => {
-      if (cmdType === 'speed') {
-        setConsoleLogs([
-          '❯ audit --pagespeed --mobile',
-          '  First Contentful Paint (FCP): 0.85s (Fast)',
-          '  Largest Contentful Paint (LCP): 1.10s',
-          '  Total Blocking Time (TBT): 20ms',
-          '  Performance Score: 98 / 100 on BD 4G',
-          '✔ Ready to convert cold ad traffic without bounce.',
-        ]);
-      } else if (cmdType === 'bkash') {
-        setConsoleLogs([
-          '❯ test --gateway bKash-Tokenized',
-          '  Request: POST /v1.2.0-beta/tokenized/checkout/create',
-          '  Status: 200 OK — Signature Verified',
-          '  Webhook Listener: Active (Instant order status update)',
-          '✔ bKash & Nagad checkout ready for instant transactions.',
-        ]);
-      } else {
-        setConsoleLogs([
-          '❯ dispatch --courier Steadfast-API',
-          '  Consignment generated: STDF-984218BD',
-          '  Recipient: Dhaka Metro Delivery (COD: ৳ 2,450)',
-          '  Sync Status: Pushed directly to merchant dashboard',
-          '✔ Zero manual address typing required.',
-        ]);
-      }
+    window.setTimeout(() => {
+      setConsoleLogs(simulationResults[command]);
       setActiveCommand(null);
-    }, 400);
+    }, 420);
   };
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'profile', label: 'engineer.ts' },
+    { id: 'checkout', label: 'checkout.php' },
+    { id: 'terminal', label: 'readiness' },
+  ];
 
   return (
-    <div className="w-full rounded-xl bg-[#090C12] border border-white/[0.08] text-left flex flex-col font-mono text-xs overflow-hidden shadow-2xl">
-      
-      {/* Terminal Titlebar */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#0C1017] border-b border-white/[0.06]">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-          <span className="text-zinc-500 text-[11px] ml-1 font-mono">
-            robiul@dhaka: ~
+    <div className="mock-window flex w-full flex-col overflow-hidden rounded-[22px] font-mono text-xs">
+      <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#101519] px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ffd166]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#D6F25C]" />
+          <span className="ml-2 hidden text-[10px] uppercase tracking-[0.16em] text-zinc-500 sm:inline">
+            robiul@systems — live
           </span>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={handleCopy}
-            className="p-1 rounded text-zinc-400 hover:text-white transition-colors"
-            title="Copy Code"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Editor File Tabs */}
-      <div className="flex items-center border-b border-white/[0.06] bg-[#07090E] px-2 select-none overflow-x-auto">
         <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-3 py-1.5 text-[11px] border-b transition-colors whitespace-nowrap ${
-            activeTab === 'profile'
-              ? 'border-emerald-400 text-zinc-100 bg-[#0C1017]'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-white"
+          aria-label="Copy current code snippet"
         >
-          RobiulAwal.ts
-        </button>
-        <button
-          onClick={() => setActiveTab('laravel')}
-          className={`px-3 py-1.5 text-[11px] border-b transition-colors whitespace-nowrap ${
-            activeTab === 'laravel'
-              ? 'border-emerald-400 text-zinc-100 bg-[#0C1017]'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
-        >
-          QuickOrderController.php
-        </button>
-        <button
-          onClick={() => setActiveTab('terminal')}
-          className={`px-3 py-1.5 text-[11px] border-b transition-colors whitespace-nowrap ${
-            activeTab === 'terminal'
-              ? 'border-emerald-400 text-zinc-100 bg-[#0C1017]'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
-        >
-          bash — terminal
+          {copied ? <Check className="h-3.5 w-3.5 text-[#D6F25C]" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
 
-      {/* Code Body */}
-      <div className="p-4 overflow-x-auto min-h-[290px] max-h-[360px] overflow-y-auto leading-relaxed text-zinc-300 bg-[#080B10]">
-        
-        {activeTab === 'profile' && (
-          <div className="space-y-0.5">
-            {profileLines.slice(0, visibleCount).map((line, i) => (
-              <div key={i} className="flex items-start">
-                <span className="w-6 text-right pr-3 select-none text-zinc-600 text-[10px]">
-                  {i + 1}
-                </span>
-                <span className="flex-1 font-mono">
-                  {line.startsWith('//') ? (
-                    <span className="text-zinc-500 italic">{line}</span>
-                  ) : line.includes(':') ? (
-                    <span>
-                      <span className="text-zinc-400">{line.slice(0, line.indexOf(':'))}</span>
-                      <span className="text-zinc-600">:</span>
-                      <span className="text-emerald-400/90">{line.slice(line.indexOf(':') + 1)}</span>
-                    </span>
-                  ) : (
-                    <span className="text-zinc-300">{line}</span>
-                  )}
-                  {i === visibleCount - 1 && visibleCount < profileLines.length && (
-                    <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-400 animate-pulse align-middle" />
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'laravel' && (
-          <div className="space-y-0.5">
-            {laravelLines.map((line, i) => (
-              <div key={i} className="flex items-start">
-                <span className="w-6 text-right pr-3 select-none text-zinc-600 text-[10px]">
-                  {i + 1}
-                </span>
-                <span className="flex-1 font-mono">
-                  {line.startsWith('//') ? (
-                    <span className="text-zinc-500 italic">{line}</span>
-                  ) : line.startsWith('<?php') || line.startsWith('namespace') || line.startsWith('use') || line.startsWith('class') || line.startsWith('public') ? (
-                    <span className="text-zinc-100 font-semibold">{line}</span>
-                  ) : (
-                    <span className="text-zinc-300">{line}</span>
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'terminal' && (
-          <div className="space-y-2 text-zinc-400 font-mono text-[11px]">
-            <div>
-              <span className="text-emerald-400">robiul@dhaka</span>
-              <span className="text-zinc-600">:</span>
-              <span className="text-zinc-400">~/f-commerce-funnel</span>
-              <span className="text-zinc-600">$</span> npx check-readiness
-            </div>
-
-            <div className="pl-3 border-l border-zinc-800 space-y-1 text-zinc-300">
-              <div className="text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Engineer: Robiul Awal initialized.</span>
-              </div>
-              <div className="text-zinc-400">Target: Bangladeshi F-Commerce & E-Commerce Brands</div>
-              <div className="text-zinc-400">Native APIs: bKash + Nagad + Steadfast + Pathao Courier</div>
-              <div className="text-zinc-400">Mobile Speed: Sub-1.2s on 4G networks</div>
-              <div className="text-zinc-400">Support: 30 days free post-launch warranty</div>
-            </div>
-
-            <div className="pt-1">
-              <span className="text-emerald-400">robiul@dhaka</span>
-              <span className="text-zinc-600">:</span>
-              <span className="text-zinc-400">~/f-commerce-funnel</span>
-              <span className="text-zinc-600">$</span> <span className="inline-block w-1.5 h-3.5 bg-emerald-400 animate-pulse align-middle" />
-            </div>
-          </div>
-        )}
-
+      <div className="flex overflow-x-auto border-b border-white/[0.07] bg-[#0a0e10]">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              setActiveTab(tab.id);
+              setConsoleLogs(null);
+            }}
+            className={`relative shrink-0 px-4 py-3 text-[10px] transition-colors ${
+              activeTab === tab.id
+                ? 'bg-white/[0.035] text-zinc-100'
+                : 'text-zinc-600 hover:text-zinc-300'
+            }`}
+          >
+            {tab.label}
+            {activeTab === tab.id && (
+              <span className="absolute inset-x-3 bottom-0 h-px bg-[#D6F25C]" />
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Quick Interactive Command Buttons */}
-      <div className="px-3.5 py-2 bg-[#0C1017] border-t border-white/[0.06] flex items-center justify-between text-[11px] gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 text-zinc-400">
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">Test API:</span>
-          <button
-            onClick={() => runSimulation('speed')}
-            disabled={activeCommand !== null}
-            className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors flex items-center gap-1"
-          >
-            <Zap className="w-3 h-3 text-emerald-400" />
-            <span>Speed</span>
-          </button>
-          <button
-            onClick={() => runSimulation('bkash')}
-            disabled={activeCommand !== null}
-            className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors flex items-center gap-1"
-          >
-            <CreditCard className="w-3 h-3 text-emerald-400" />
-            <span>bKash</span>
-          </button>
-          <button
-            onClick={() => runSimulation('courier')}
-            disabled={activeCommand !== null}
-            className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors flex items-center gap-1"
-          >
-            <PackageCheck className="w-3 h-3 text-emerald-400" />
-            <span>Courier</span>
-          </button>
-        </div>
-
-        <span className="text-zinc-500 text-[10px] hidden xs:inline">
-          Dhaka, BD (GMT+6)
-        </span>
-      </div>
-
-      {/* Console Simulation Output Drawer */}
-      {consoleLogs && (
-        <div className="bg-[#05070A] border-t border-emerald-500/30 p-3 text-[11px] font-mono space-y-1 animate-in fade-in duration-150">
-          <div className="flex items-center justify-between text-zinc-500 text-[10px] pb-1 border-b border-zinc-900">
-            <span>TERMINAL RUN RESULT</span>
-            <button onClick={() => setConsoleLogs(null)} className="hover:text-white">
-              ✕
-            </button>
-          </div>
-          {consoleLogs.map((log, i) => (
-            <div key={i} className={i === consoleLogs.length - 1 ? 'text-emerald-400 font-medium' : 'text-zinc-400'}>
-              {log}
+      <div className="min-h-[322px] flex-1 overflow-x-auto bg-[#080b0d] px-3 py-4 sm:px-4">
+        <div className="space-y-1.5">
+          {lines.slice(0, visibleCount).map((line, index) => (
+            <div key={`${activeTab}-${index}`} className="flex min-w-max items-start gap-3 leading-relaxed">
+              <span className="w-6 shrink-0 select-none text-right text-[10px] text-zinc-700">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="whitespace-pre text-[11px] sm:text-xs">{highlightLine(line)}</span>
+              {index === visibleCount - 1 && visibleCount < lines.length && (
+                <span className="mt-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-[#D6F25C]" />
+              )}
             </div>
           ))}
         </div>
-      )}
+      </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] bg-[#0d1114] px-3 py-2.5 sm:px-4">
+        <div className="flex items-center gap-1.5">
+          <span className="mr-1 hidden font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-600 sm:inline">
+            Test
+          </span>
+          <button
+            type="button"
+            onClick={() => runSimulation('speed')}
+            disabled={activeCommand !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-zinc-300 transition-colors hover:border-[#D6F25C]/40 hover:text-[#D6F25C] disabled:opacity-50"
+          >
+            <Zap className="h-3 w-3 text-[#D6F25C]" />
+            Speed
+          </button>
+          <button
+            type="button"
+            onClick={() => runSimulation('bkash')}
+            disabled={activeCommand !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-zinc-300 transition-colors hover:border-[#D6F25C]/40 hover:text-[#D6F25C] disabled:opacity-50"
+          >
+            <CreditCard className="h-3 w-3 text-[#D6F25C]" />
+            bKash
+          </button>
+          <button
+            type="button"
+            onClick={() => runSimulation('courier')}
+            disabled={activeCommand !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-zinc-300 transition-colors hover:border-[#D6F25C]/40 hover:text-[#D6F25C] disabled:opacity-50"
+          >
+            <PackageCheck className="h-3 w-3 text-[#D6F25C]" />
+            Courier
+          </button>
+        </div>
+        <span className="hidden items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-zinc-600 sm:flex">
+          <TerminalSquare className="h-3 w-3" />
+          Dhaka · GMT+6
+        </span>
+      </div>
+
+      {consoleLogs && (
+        <div className="border-t border-[#D6F25C]/25 bg-[#06090a] px-4 py-3">
+          <div className="mb-2 flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-zinc-600">
+            <span>Run result</span>
+            <button
+              type="button"
+              onClick={() => setConsoleLogs(null)}
+              className="transition-colors hover:text-white"
+              aria-label="Close run result"
+            >
+              Close ×
+            </button>
+          </div>
+          <div className="space-y-1 text-[10px] leading-relaxed sm:text-[11px]">
+            {consoleLogs.map((log, index) => (
+              <div
+                key={index}
+                className={
+                  index === consoleLogs.length - 1
+                    ? 'flex items-center gap-2 text-[#D6F25C]'
+                    : 'text-zinc-400'
+                }
+              >
+                {index === consoleLogs.length - 1 && <CheckCircle2 className="h-3.5 w-3.5" />}
+                <span>{log.replace(/^✔\s*/, '')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}

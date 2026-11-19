@@ -1,46 +1,75 @@
-import React from 'react';
+import { Quote, Star } from 'lucide-react';
 import { testimonialsData } from '../data/portfolioData';
+import { Reveal } from './ui/Reveal';
+import { SectionHeading } from './ui/SectionHeading';
 
-export const TestimonialsSection: React.FC = () => {
+export function TestimonialsSection() {
   return (
-    <section className="py-20 lg:py-24 border-b border-white/[0.06] bg-[#07080B]">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8">
-        
-        <div className="max-w-2xl mb-12">
-          <div className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-2">
-            06 // Verified Client Feedback
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            Direct feedback from Bangladeshi brand owners.
-          </h2>
-        </div>
+    <section className="border-y border-white/[0.06] bg-[#07090b] py-24 lg:py-32">
+      <div className="page-shell">
+        <SectionHeading
+          eyebrow="07 / Client notes"
+          title={
+            <>
+              The work is judged <span className="serif-accent">after launch.</span>
+            </>
+          }
+          description="Direct feedback from founders and operators who needed systems that hold up in day-to-day business—not just a polished demo."
+          action={
+            <span className="chip border-[#D6F25C]/25 text-[#D6F25C]">
+              <Star className="h-3 w-3 fill-current" />
+              5.0 average feedback
+            </span>
+          }
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {testimonialsData.map((item) => (
-            <div
-              key={item.id}
-              className="p-6 rounded-xl border border-white/[0.08] bg-[#090C12] flex flex-col justify-between space-y-4 font-mono text-xs"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-zinc-500 text-[11px]">
-                  <span>{item.company}</span>
-                  <span className="text-emerald-400 font-medium">{item.outcome}</span>
+        <div className="mt-16 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {testimonialsData.map((item, index) => (
+            <Reveal key={item.id} delay={(index % 2) * 90}>
+              <article className="surface-card interactive-card relative flex h-full flex-col overflow-hidden rounded-[22px] p-7 sm:p-8">
+                <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 brand-glow opacity-40" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <Quote className="h-7 w-7 text-[#D6F25C]" />
+                  <div className="flex items-center gap-1 text-[#D6F25C]">
+                    {Array.from({ length: item.rating }).map((_, starIndex) => (
+                      <Star key={starIndex} className="h-3 w-3 fill-current" />
+                    ))}
+                  </div>
                 </div>
 
-                <p className="text-zinc-300 font-sans leading-relaxed text-sm italic">
-                  "{item.quote}"
-                </p>
-              </div>
+                <blockquote className="relative mt-7 flex-1 text-[15px] leading-[1.8] text-zinc-300">
+                  “{item.quote}”
+                </blockquote>
 
-              <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
-                <span className="text-white font-medium">{item.name} · {item.role}</span>
-                <span className="text-zinc-600">{item.location}</span>
-              </div>
-            </div>
+                <div className="mt-8 border-t border-white/[0.08] pt-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D6F25C]/25 bg-[#D6F25C]/8 font-mono text-xs font-semibold text-[#D6F25C]">
+                        {item.avatarInitials}
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-white">{item.name}</div>
+                        <div className="mt-0.5 text-xs text-zinc-500">
+                          {item.role} · {item.company}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-semibold text-[#D6F25C]">{item.outcome}</div>
+                      <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-600">
+                        {item.location}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="chip">{item.projectType}</span>
+                  </div>
+                </div>
+              </article>
+            </Reveal>
           ))}
         </div>
-
       </div>
     </section>
   );
-};
+}
