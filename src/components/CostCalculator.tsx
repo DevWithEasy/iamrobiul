@@ -1,210 +1,264 @@
-import React, { useState, useMemo } from 'react';
-import { calculatorPackages, calculatorAddOns, developerInfo } from '../data/portfolioData';
-import { Check, MessageCircle, ArrowRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowUpRight, Check, Clock3, MessageCircle, ReceiptText, Sparkles } from 'lucide-react';
+import { calculatorAddOns, calculatorPackages, developerInfo } from '../data/portfolioData';
+import { Reveal } from './ui/Reveal';
+import { SectionHeading } from './ui/SectionHeading';
 
-export const CostCalculator: React.FC = () => {
-  const [selectedPackageId, setSelectedPackageId] = useState<string>(calculatorPackages[0].id);
+interface CostCalculatorProps {
+  initialPackageId?: string;
+}
+
+const formatBDT = (amount: number) => `৳ ${amount.toLocaleString('en-BD')}`;
+
+export function CostCalculator({ initialPackageId }: CostCalculatorProps) {
+  const [selectedPackageId, setSelectedPackageId] = useState(calculatorPackages[0].id);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>(['courier-api']);
 
-  const activePackage = useMemo(() => {
-    return calculatorPackages.find((p) => p.id === selectedPackageId) || calculatorPackages[0];
-  }, [selectedPackageId]);
+  useEffect(() => {
+    if (initialPackageId && calculatorPackages.some((pkg) => pkg.id === initialPackageId)) {
+      setSelectedPackageId(initialPackageId);
+    }
+  }, [initialPackageId]);
+
+  const activePackage = useMemo(
+    () => calculatorPackages.find((pkg) => pkg.id === selectedPackageId) ?? calculatorPackages[0],
+    [selectedPackageId],
+  );
+
+  const selectedAddOns = useMemo(
+    () =>
+      selectedAddOnIds
+        .map((id) => calculatorAddOns.find((addon) => addon.id === id))
+        .filter((addon): addon is (typeof calculatorAddOns)[number] => Boolean(addon)),
+    [selectedAddOnIds],
+  );
+
+  const totalCostBDT = useMemo(
+    () => activePackage.basePriceBDT + selectedAddOns.reduce((sum, addon) => sum + addon.priceBDT, 0),
+    [activePackage, selectedAddOns],
+  );
+
+  const whatsappUrl = useMemo(() => {
+    const addonsText = selectedAddOns.length
+      ? `Add-ons: ${selectedAddOns.map((addon) => addon.label).join(', ')}`
+      : 'Add-ons: None';
+    const message = `Hello Robiul! I prepared a project estimate on your portfolio.\n\nPackage: ${activePackage.name}\nEstimated budget: ${formatBDT(totalCostBDT)}\nTimeline: ${activePackage.deliveryDays}\n${addonsText}\n\nI'd like to discuss the scope and next steps.`;
+    return `https://wa.me/${developerInfo.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }, [activePackage, selectedAddOns, totalCostBDT]);
 
   const toggleAddOn = (id: string) => {
-    setSelectedAddOnIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    setSelectedAddOnIds((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     );
   };
 
-  const totalCostBDT = useMemo(() => {
-    const base = activePackage.basePriceBDT;
-    const addonsTotal = selectedAddOnIds.reduce((sum, id) => {
-      const addon = calculatorAddOns.find((a) => a.id === id);
-      return sum + (addon ? addon.priceBDT : 0);
-    }, 0);
-    return base + addonsTotal;
-  }, [activePackage, selectedAddOnIds]);
-
-  const activeAddOnsList = useMemo(() => {
-    return selectedAddOnIds
-      .map((id) => calculatorAddOns.find((a) => a.id === id)?.label)
-      .filter(Boolean);
-  }, [selectedAddOnIds]);
-
-  const whatsappUrl = useMemo(() => {
-    const addonsText = activeAddOnsList.length > 0 
-      ? `\nAdd-ons: ${activeAddOnsList.join(', ')}` 
-      : '\nAdd-ons: None';
-
-    const message = `Hello Robiul! I calculated a project estimate on your portfolio:\n\nPackage: ${activePackage.name}\nEstimated Budget: ৳ ${totalCostBDT.toLocaleString('en-BD')}${addonsText}\nTimeline: ${activePackage.deliveryDays}\n\nLet's discuss getting started.`;
-
-    return `https://wa.me/${developerInfo.whatsappNumber}?text=${encodeURIComponent(message)}`;
-  }, [activePackage, totalCostBDT, activeAddOnsList]);
-
   return (
-    <section id="calculator" className="py-20 lg:py-24 border-b border-white/[0.06] bg-[#07080B]">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8">
-        
-        {/* Header */}
-        <div className="max-w-2xl mb-12">
-          <div className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-2">
-            03 // Interactive Project Cost Estimator
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            Estimate your investment in seconds.
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Choose your base system and any optional Bangladeshi courier or payment add-ons.
-          </p>
-        </div>
+    <section id="calculator" className="relative bg-[#090c0e] py-24 lg:py-32">
+      <div className="page-shell">
+        <SectionHeading
+          eyebrow="04 / Project estimate"
+          title={
+            <>
+              A transparent starting point for your <span className="serif-accent">investment.</span>
+            </>
+          }
+          description="Configure a realistic baseline in seconds. The final scope is always confirmed after a short discovery conversation."
+          action={
+            <span className="chip border-[#D6F25C]/25 text-[#D6F25C]">
+              <Sparkles className="h-3 w-3" />
+              No hidden fees
+            </span>
+          }
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Selections */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* Step 1: Base */}
-            <div className="space-y-2">
-              <span className="text-xs font-mono text-zinc-400 block">
-                [1] Select Base Project Scope:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="mt-16 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <Reveal className="space-y-8 lg:col-span-7">
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#D6F25C]">
+                  Step 01
+                </span>
+                <span className="text-sm font-semibold text-white">Choose a base scope</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {calculatorPackages.map((pkg) => {
                   const isSelected = pkg.id === selectedPackageId;
                   return (
-                    <div
+                    <button
                       key={pkg.id}
+                      type="button"
                       onClick={() => setSelectedPackageId(pkg.id)}
-                      className={`p-3.5 rounded-lg border text-left cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-emerald-500/70 bg-[#0C1217]'
-                          : 'border-white/[0.08] bg-[#090C12] hover:border-zinc-700'
+                      className={`surface-card interactive-card rounded-2xl p-5 text-left ${
+                        isSelected ? 'border-[#D6F25C]/55 bg-[#D6F25C]/[0.045]' : ''
                       }`}
+                      aria-pressed={isSelected}
                     >
-                      <div className="flex items-center justify-between text-xs font-mono mb-1">
-                        <span className="text-zinc-400">{pkg.type}</span>
-                        <span className="text-white font-bold">
-                          ৳ {pkg.basePriceBDT.toLocaleString('en-BD')}
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+                          {pkg.type}
+                        </span>
+                        <span
+                          className={`flex h-4.5 w-4.5 items-center justify-center rounded-full border ${
+                            isSelected
+                              ? 'border-[#D6F25C] bg-[#D6F25C] text-[#080b0d]'
+                              : 'border-white/20'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                         </span>
                       </div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-white">
-                        {pkg.name}
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 mt-1 font-sans line-clamp-1">
+                      <h3 className="mt-4 text-sm font-semibold leading-snug text-white">{pkg.name}</h3>
+                      <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-500">
                         {pkg.idealFor}
                       </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Step 2: Add-Ons */}
-            <div className="space-y-2 pt-2">
-              <span className="text-xs font-mono text-zinc-400 block">
-                [2] Select Bangladeshi APIs & Enhancements:
-              </span>
-              <div className="space-y-2">
-                {calculatorAddOns.map((addon) => {
-                  const isChecked = selectedAddOnIds.includes(addon.id);
-                  return (
-                    <div
-                      key={addon.id}
-                      onClick={() => toggleAddOn(addon.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between text-xs font-mono ${
-                        isChecked
-                          ? 'border-emerald-500/50 bg-[#0C1217]'
-                          : 'border-white/[0.08] bg-[#090C12] hover:border-zinc-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                          isChecked ? 'border-emerald-400 bg-emerald-400 text-black' : 'border-zinc-700'
-                        }`}>
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
-                        <div>
-                          <span className="text-zinc-200 font-medium">{addon.label}</span>
-                          <span className="text-zinc-500 text-[11px] block font-sans">{addon.description}</span>
-                        </div>
+                      <div className="mt-5 flex items-end justify-between border-t border-white/[0.07] pt-4">
+                        <span className="text-sm font-bold text-white">
+                          {formatBDT(pkg.basePriceBDT)}
+                        </span>
+                        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                          {pkg.deliveryDays}
+                        </span>
                       </div>
-                      <span className="text-emerald-400 font-semibold shrink-0 ml-3">
-                        +৳ {addon.priceBDT.toLocaleString('en-BD')}
-                      </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-          </div>
-
-          {/* Right Column: Live Summary */}
-          <div className="lg:col-span-5 sticky top-24">
-            <div className="p-6 rounded-xl border border-white/[0.08] bg-[#080B10] space-y-4 font-mono">
-              <div className="flex items-center justify-between text-xs text-zinc-400 pb-3 border-b border-white/[0.06]">
-                <span>SPECIFICATION SUMMARY</span>
-                <span className="text-emerald-400">BDT (৳)</span>
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#D6F25C]">
+                  Step 02
+                </span>
+                <span className="text-sm font-semibold text-white">Add integrations & assurance</span>
               </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">{activePackage.name}</span>
-                  <span className="text-white font-bold">৳ {activePackage.basePriceBDT.toLocaleString('en-BD')}</span>
-                </div>
-
-                {activeAddOnsList.length > 0 && (
-                  <div className="pt-2 border-t border-zinc-900 space-y-1 text-zinc-400 text-[11px]">
-                    {selectedAddOnIds.map((id) => {
-                      const addon = calculatorAddOns.find((a) => a.id === id);
-                      if (!addon) return null;
-                      return (
-                        <div key={id} className="flex justify-between">
-                          <span className="truncate pr-2">• {addon.label}</span>
-                          <span className="text-zinc-300 shrink-0">+৳ {addon.priceBDT.toLocaleString('en-BD')}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="pt-2 border-t border-zinc-900 flex justify-between text-zinc-400">
-                  <span>Turnaround:</span>
-                  <span className="text-zinc-200 font-medium">{activePackage.deliveryDays}</span>
-                </div>
+              <div className="space-y-2.5">
+                {calculatorAddOns.map((addon) => {
+                  const isSelected = selectedAddOnIds.includes(addon.id);
+                  return (
+                    <button
+                      key={addon.id}
+                      type="button"
+                      onClick={() => toggleAddOn(addon.id)}
+                      className={`flex w-full items-center justify-between gap-4 rounded-2xl border px-4 py-3.5 text-left transition-all ${
+                        isSelected
+                          ? 'border-[#D6F25C]/45 bg-[#D6F25C]/[0.04]'
+                          : 'border-white/[0.08] bg-white/[0.018] hover:border-white/20'
+                      }`}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="flex min-w-0 items-center gap-3.5">
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                            isSelected
+                              ? 'border-[#D6F25C] bg-[#D6F25C] text-[#080b0d]'
+                              : 'border-white/20'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-zinc-100">
+                            {addon.label}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-zinc-500">
+                            {addon.description}
+                          </span>
+                        </span>
+                      </div>
+                      <span className="shrink-0 font-mono text-xs font-semibold text-[#D6F25C]">
+                        +{formatBDT(addon.priceBDT)}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* Total */}
-              <div className="pt-4 border-t border-white/[0.08] flex items-baseline justify-between">
-                <span className="text-xs text-zinc-400">Total Investment:</span>
-                <div className="text-right">
-                  <span className="text-2xl font-bold text-white">
-                    ৳ {totalCostBDT.toLocaleString('en-BD')}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 block">50% Advance / 50% on Delivery</span>
-                </div>
-              </div>
-
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full mt-3 py-3 px-4 rounded-lg text-xs font-semibold text-[#07080B] bg-emerald-400 hover:bg-emerald-300 transition-colors flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4 fill-[#07080B]" />
-                <span>Send Specification via WhatsApp</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </a>
-
-              <span className="text-[10px] text-zinc-500 block text-center">
-                Includes 30 days free post-launch code warranty
-              </span>
             </div>
-          </div>
+          </Reveal>
 
+          <Reveal delay={120} className="lg:sticky lg:top-28 lg:col-span-5">
+            <div className="surface-solid relative overflow-hidden rounded-[24px] p-6 sm:p-7">
+              <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 brand-glow" />
+              <div className="relative">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D6F25C]/10 text-[#D6F25C]">
+                      <ReceiptText className="h-4 w-4" />
+                    </span>
+                    <span className="text-sm font-semibold text-white">Estimate summary</span>
+                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+                    BDT
+                  </span>
+                </div>
+
+                <div className="space-y-4 py-6 text-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-zinc-100">{activePackage.name}</div>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                        <Clock3 className="h-3 w-3" />
+                        {activePackage.deliveryDays}
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-semibold text-white">
+                      {formatBDT(activePackage.basePriceBDT)}
+                    </span>
+                  </div>
+
+                  {selectedAddOns.length > 0 && (
+                    <div className="space-y-2.5 border-t border-white/[0.07] pt-4">
+                      {selectedAddOns.map((addon) => (
+                        <div key={addon.id} className="flex items-start justify-between gap-3 text-xs">
+                          <span className="text-zinc-500">
+                            <span className="mr-2 text-[#D6F25C]">+</span>
+                            {addon.label}
+                          </span>
+                          <span className="shrink-0 text-zinc-300">{formatBDT(addon.priceBDT)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 border-t border-white/[0.07] pt-4">
+                    {activePackage.includes.slice(0, 3).map((item) => (
+                      <span key={item} className="chip">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#D6F25C]/25 bg-[#D6F25C]/[0.055] p-5">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+                    Estimated investment
+                  </div>
+                  <div className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                    {formatBDT(totalCostBDT)}
+                  </div>
+                  <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                    50% advance / 50% on delivery
+                  </div>
+                </div>
+
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary mt-5 w-full group"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Send this estimate
+                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </a>
+                <p className="mt-4 text-center text-[11px] leading-relaxed text-zinc-600">
+                  Includes 30 days of post-launch support. Final scope is confirmed together.
+                </p>
+              </div>
+            </div>
+          </Reveal>
         </div>
-
       </div>
     </section>
   );
-};
+}
